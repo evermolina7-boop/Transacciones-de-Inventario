@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Generador de Traslados | C. Imberton</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#15324b;--blue:#1e5b82;--line:#cbd5df;--muted:#64748b;--bg:#f3f6f9}*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px Arial,sans-serif;color:#17212b}.app{max-width:1180px;margin:28px auto;padding:0 18px}.top{background:var(--navy);color:white;padding:22px 26px;border-radius:12px 12px 0 0}.top h1{font-size:22px;margin:0 0 6px}.top p{margin:0;color:#d5e2ed}.panel{background:white;padding:22px 26px;border:1px solid #dce4eb;border-top:0;box-shadow:0 8px 22px #1b355012}.notice{background:#fff7df;border:1px solid #f0d58a;color:#694e08;padding:12px 14px;border-radius:8px;margin-bottom:16px;line-height:1.45}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.btn{border:0;border-radius:7px;padding:11px 16px;font-weight:700;cursor:pointer;background:var(--blue);color:white}.btn.secondary{background:#e8eef3;color:#21384b}.btn:disabled{opacity:.5;cursor:not-allowed}textarea{width:100%;min-height:155px;border:1px solid var(--line);border-radius:8px;padding:12px;font:12px Consolas,monospace;resize:vertical}.hint{font-size:12px;color:var(--muted);margin:7px 0 14px}.status{font-weight:700;margin:12px 0;color:#14532d}.error{color:#a12626}.preview-wrap{overflow:auto;margin-top:22px;border:1px solid var(--line);background:#e9eef3;padding:14px}.sheet{width:1100px;min-height:680px;margin:0 auto 18px;background:#fff;padding:26px 28px;box-shadow:0 2px 10px #0002;color:#111}.sheet-head{display:grid;grid-template-columns:1fr 255px;align-items:start}.brand-block{display:grid;grid-template-columns:82px 1fr;align-items:center}.brand-logo{width:72px;height:72px;object-fit:contain}.unit-line{text-align:center;font-size:12px;font-weight:bold;margin-top:5px}.company{text-align:center;font-weight:bold;font-size:19px}.doc-title{text-align:center;font-weight:bold;font-size:17px;margin-top:8px}.subtitle{text-align:center;font-size:12px;margin-top:5px}.meta{font-size:12px;line-height:2}.meta b{display:inline-block;width:120px}.meta span{font-weight:bold}.trans{border-top:1px solid #222;border-bottom:1px solid #222;padding:9px 5px;margin:15px 0 10px;font-size:12px;display:flex;gap:12px}.trans strong{white-space:nowrap}.trans-list{overflow-wrap:anywhere}.data{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px}.data th{background:#e9edf1;border:1px solid #444;padding:6px 3px;text-align:center}.data td{border:1px solid #777;padding:5px 3px;vertical-align:top;overflow-wrap:anywhere}.data tr:nth-child(even) td{background:#fafafa}.summary{width:54%;margin:15px 0 0 auto;border-collapse:collapse;font-size:11px}.summary td{padding:4px 7px;border-bottom:1px solid #bbb}.summary td:last-child{font-weight:bold;text-align:right}.balanced{font-weight:bold;margin-top:5px;text-align:right;font-size:11px}.signatures{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:58px;text-align:center;font-size:10px;font-weight:bold}.sigline{border-top:1px solid #222;padding-top:7px}.footer{text-align:center;margin-top:30px;font-size:9px;color:#555}.app-footer{text-align:center;color:#64748b;font-size:12px;padding:18px 0 24px;font-weight:600}.page-note{font-size:11px;color:#555;margin:0 0 6px}
+.login-wrap{max-width:430px;margin:9vh auto 24px;padding:0 18px}.login-card{background:white;border:1px solid #dce4eb;border-radius:12px;padding:26px;box-shadow:0 8px 22px #1b355012}.login-card h2{margin:0 0 8px;color:var(--navy)}.login-card label{display:block;font-weight:bold;margin:14px 0 6px}.login-card input{width:100%;padding:12px;border:1px solid var(--line);border-radius:7px}.topbar-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}.history{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}.history-item{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #e5eaf0;padding:10px 0}.history-item small{display:block;color:var(--muted);margin-top:3px}.history-search{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.history-search input{flex:1;min-width:220px;padding:11px 12px;border:1px solid var(--line);border-radius:7px;font-size:14px}.history-pager{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid #e5eaf0}.history-pager small{color:var(--muted)}.history-item>div{min-width:0}.history-item b{color:var(--navy)}@media(max-width:620px){.history-item{align-items:flex-start;flex-direction:column}.history-item .btn{width:100%}.history-search .btn{flex:1}}
+@page{size:letter landscape;margin:9mm}
+@media print{body{background:white}.app,.top,.panel>.controls,.notice,.hint,.status,.preview-wrap,.app-footer{display:none!important}#printArea{display:block!important}.sheet{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;page-break-after:always}.sheet:last-child{page-break-after:auto}.data{font-size:8px}.data th,.data td{padding:3px 2px}.signatures{margin-top:38px}}
+</style></head>
+<body>
+<section id="loginView" class="login-wrap">
+  <div class="login-card">
+    <h2>Acceso al Generador de Traslados</h2>
+    <p>Ingresa con tu cuenta autorizada.</p>
+    <form id="loginForm">
+      <label for="loginEmail">Correo electrónico</label><input id="loginEmail" type="email" autocomplete="username" required>
+      <label for="loginPassword">Contraseña</label><input id="loginPassword" type="password" autocomplete="current-password" required>
+      <button class="btn" id="loginButton" type="submit" style="width:100%;margin-top:18px">Iniciar sesión</button>
+    </form>
+    <div id="loginMessage" class="status"></div>
+  </div>
+</section>
+<main class="app" id="appView" hidden><header class="top"><h1>Generador de hojas de traslado</h1><p>Unidad de Inventarios Almacen Farmacia</p>
+<div class="topbar-actions"><span id="signedUser" style="align-self:center"></span><button class="btn secondary" id="historyButton" type="button">Historial</button><button class="btn secondary" id="logoutButton" type="button">Cerrar sesión</button></div></header><section class="panel">
+<div class="notice">Conectado a Base de Datos En Linea</div>
+<div class="controls"><h3>1. Pega las transacciones de Oracle</h3><textarea id="paste" placeholder="Copia desde Excel los encabezados y todas las filas de Oracle, luego pégalos aquí (Ctrl+V)."></textarea><div class="hint">También puedes cargar directamente el archivo .xlsx exportado desde Oracle.</div><div class="actions"><button class="btn" id="build">Generar hoja de traslado</button><button class="btn secondary" id="clear">Limpiar</button><label class="btn secondary" for="file">Cargar Excel de Oracle</label><input id="file" type="file" accept=".xlsx,.xls,.csv" hidden></div><div id="message" class="status"></div><div id="documentActions" class="actions" hidden><button class="btn" id="print">Imprimir / Guardar PDF</button><button class="btn secondary" id="again">Reimprimir documento actual</button></div></div>
+<div id="preview" class="preview-wrap" hidden></div>
+<div id="historyPanel" class="history" hidden>
+<h3>Historial de traslados</h3>
+<form id="historySearchForm" class="history-search">
+  <input id="historySearchInput" type="search" inputmode="numeric" placeholder="Buscar por correlativo o número de transacción" autocomplete="off">
+  <button class="btn" type="submit">Buscar</button>
+  <button class="btn secondary" id="historyClearButton" type="button">Limpiar</button>
+</form>
+<div id="historyList">Cargando...</div>
+<div id="historyPager" class="history-pager" hidden>
+  <small id="historyPageInfo"></small>
+  <div class="actions" style="margin:0"><button class="btn secondary" id="historyPrev" type="button">Anterior</button><button class="btn secondary" id="historyNext" type="button">Siguiente</button></div>
+</div>
+</div>
+</section></main><footer class="app-footer">Powered By: Ever Molina</footer><div id="printArea" style="display:none"></div>
+<script>
+const $=id=>document.getElementById(id);
+const SUPABASE_URL="https://mxsnosrukfxsofstvxoh.supabase.co";
+const SUPABASE_KEY="sb_publishable_zCRKiUiCQHwZizHf385ubQ_Nnw1FPVS";
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+let current=null, activeUser=null;
+const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' ');
+const aliases={org:['organizacion','org'],trans:['transaccion inventario','transaccion'],date:['fecha de transaccion','fecha'],article:['articulo'],desc:['descripcion de articulo','descripcion'],um:['articulo - unidad de medida principal','unidad de medida principal','u.m'],sub:['subinventario'],lot:['lote'],expiry:['fecha de caducidad','vence'],qty:['cantidad de transaccion de lote','cantidad'],ref:['referencia de transaccion','comentario de referencia'],user:['creado por','usuario'],type:['tipo de origen de transaccion','tipo de transaccion']};
+function parseTSV(txt){let rows=txt.replace(/^\uFEFF/,'').trim().split(/\r?\n/).map(x=>x.split('\t'));return rows}
+function findHeader(rows){for(let i=0;i<Math.min(rows.length,8);i++){let h=rows[i].map(norm);if(h.includes('transaccion inventario')&&h.includes('organizacion'))return i;}return -1}
+function parseRows(rows){let hi=findHeader(rows);if(hi<0)throw Error('No encuentro los encabezados de Oracle. Pega también la fila de títulos, incluyendo “Organización” y “Transacción Inventario”.');let heads=rows[hi].map(norm),idx={};for(let k in aliases)idx[k]=heads.findIndex(h=>aliases[k].includes(h));for(let k of ['org','trans','date','article','desc','um','sub','lot','expiry','qty','ref','user','type'])if(idx[k]<0)throw Error('Falta una columna requerida en Oracle: '+aliases[k][0]);return rows.slice(hi+1).filter(r=>r.some(v=>String(v??'').trim()!=='' )).map(r=>({org:r[idx.org],trans:r[idx.trans],date:r[idx.date],article:r[idx.article],desc:r[idx.desc],um:r[idx.um],sub:r[idx.sub],lot:r[idx.lot],expiry:r[idx.expiry],qty:r[idx.qty],ref:r[idx.ref],user:r[idx.user],type:r[idx.type]}));}
+function excelDate(v){if(v instanceof Date)return v;if(typeof v==='number'&&v>20000&&v<80000){let d=XLSX.SSF.parse_date_code(v);return new Date(d.y,d.m-1,d.d,d.H,d.M,d.S)}let s=String(v??'').trim();if(!s)return null;let d=new Date(s);return isNaN(d)?null:d}
+function fmtDate(v,withTime=false){let d=excelDate(v);if(!d)return String(v??'');return new Intl.DateTimeFormat('es-SV',withTime?{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}:{day:'2-digit',month:'2-digit',year:'numeric'}).format(d)}
+function num(v){let n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function formatFolio(n){return String(n).padStart(8,'0')}
+function uniqueTransactions(data){return [...new Set(data.map(x=>String(x.trans??'').trim()).filter(Boolean))]}
+function makePage(data,doc,page,total){let tx=uniqueTransactions(data),out=data.reduce((s,r)=>s+Math.min(0,num(r.qty)),0),inn=data.reduce((s,r)=>s+Math.max(0,num(r.qty)),0),net=out+inn;let rows=data.map(r=>`<tr><td>${esc(r.org)}</td><td>${esc(r.trans)}</td><td>${esc(fmtDate(r.date,true))}</td><td>${esc(r.article)}</td><td>${esc(r.desc)}</td><td>${esc(r.um)}</td><td>${esc(r.sub)}</td><td>${esc(r.lot)}</td><td>${esc(fmtDate(r.expiry))}</td><td style="text-align:right">${num(r.qty).toLocaleString('en-US')}</td><td>${esc(r.user)}</td><td>${esc(r.ref)}</td><td>${esc(r.type)}</td></tr>`).join('');return `<article class="sheet"><div class="sheet-head"><div><div class="brand-block"><img class="brand-logo" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wgARCADIAMgDASIAAhEBAxEB/8QAHAABAAIDAQEBAAAAAAAAAAAAAAYHAwQFCAIB/8QAGwEBAAIDAQEAAAAAAAAAAAAAAAEFAgMEBwb/2gAMAwEAAhADEAAAAfVIAAAB8n05OhCSorkJM4/Vl9gAAAAAAAY9SCw7sdwgIAMmMSSVVjsSsxzOnIAAAABo7ldQwYSAAAAA70v2a/n7IAAAACNRDc04BAA0K312FrqN62uxtxy5z0UPxMf1lgAAAAA1NvjEEGIBq7Vc4dtf8wqvUgjPe9h+Lrq6fnfQYsvPwAAAAHD7nIhAhABUttQPTcVEKz0oBZdaX1uq7zFr5iAAAAA19gVW6XNxAPj7FGRn0tC+L7SnVjdfVaQH1/Wvb7fjZ8x5N9SAAAAABw4PakChyBBob9P67Kx3n9y/T+gHn8egM/niV5c/oKd1h0e346w2HNIAAAABhzCudGzoTDj0/cFP89/BhW+hgJXFJXs4ruOpa+VZZ3rbMgkAAAAABxPOPqnzXzX9TCt9DATOGWFs4vRvd/Vv5UAAAAAAAAgE/Y7qaXK199NLlFNdyyU4BtrQAAAAAITpaHY57udV93YJloza/PiOi7uHi/EZy5phJa0muWmHzalfQmO+tpPxPyY38HM+YyltgUfeG6pDbWgAAAAAAAAAAAAAf//EACwQAAEEAQMBBwQDAQAAAAAAAAQCAwUGAQAgMBMHEBEVFzVAEhQWMSQ0UDb/2gAIAQEAAQUC/wAJSsIw5KDt6VNo155pM2nTcqOvSFpcx8BxxLSSZnOnHVu52ocU3kaYUnTTyH08pZiBEEErJXwsvrHWEcktPGYUkRp11Ty+OMCW6viUrCElk5Ke44+O6+sY8McUyR9KOOOjerr9chb3XI2mGsgNF291WfyWR8RbcQ3kCSYkm46N+vlLc6Q20olAY8ge7Ikd4JrseTCyrc1HcktnwC23EnKWtvZoflJfJMf1Ntxx/N29nuM5sXJKp+oLbbQ8vB7ezSMylPI+31Wdq0YcRNQrkY73w8QuVJAHZED5ZBnoFbVJwtJdTFfz+GueItRHay00hlAJ6hFIWlxPJLDdZjY+eOKvzkHXnIOvOQdecg685B0zJCkOBHKEU24l5HJIh/bO99w9y21j3jQZqhFtOpfRxvMpfbLEUI53XD3LbWPeO6LW9gjkdZS+gyOWN3XD3LbWPeNCAOFZYHQMjmJimntXkZQsvtqDCiJ0aIba1+vg9pXvu2hf9N8Kfp7FgM9MhNemQmvTITXpkJr0yE1C0geFkP8AGtFlTXB67YzZYrTFoW9aJ+8LhJaTv/2kpa7MuuYCuRSpewW9+IloCVLlGGe0E0hkeyuHV0K+GmmWe2+QvwFzXJSc1eMw01DWjMtN8F6r5MyxAyMwYQIYe7KCQxjd6nqyXK2n8OkWxr/DmSyYeCkWLBb4E0+fqICgRWKfMYBr7XQiarDGAWK3wZzsvCQ8mdaJWsESlvo8AfEy3zf/xAA0EQAABAMEBggHAQAAAAAAAAABAgMEABEhBRIwQRATMTRRcRQVFjJSU2GRQEJQgaGxweH/2gAIAQMBAT8B+mNmC7uqYU4wew3RQmEhg5DJmunCQ4TNv0pcqXGCEKmUClCgaLaaFVQ1wd4v6wrJUBN4SedNNpqAm0PPOmFshnbhbtxzt4we2GZQmBp/aH9oHfG4FDLCs9qV4vqjDKOz6PjGOz6PjGHFiJIomUAw0DCsTew5DpfbqpyHCsTew5DpfbqpyHCRWUQNfTGQx1o88yOtHnmQe0XShRIY9BwATQ6EBigAmrOtQ4SCG6KYazXS7swrnCCFnCRMTynKtc/f0/MN0WZmYGPK9I2ftn/IWSbAzKYkr1M/9/kWgmySKAogA1yHL3/UCRkLspJBdlx2jzjVMQcDelduTGvzekWgmimtdQ2SD4D/xAAmEQABBAEEAQMFAAAAAAAAAAACAAEDETAQEiEyURMUMSJAQVCB/9oACAECAQE/Af1hSCHymnBNz8YjLaNp3vSA6KsUzWGsTWbYzg/IpoTUcbR4pC2Da9w/he4fwhnd3rFP01Ds2KfpqHZsTsxcOvSDwvSDwmiBuawWW9E78UiKS3pER7+ELlv5Ubm/ZWey1cm3+qN3cfq+w//EAD8QAAECAwIKBQoFBQEAAAAAAAECAwAEERIhEyAwMTI0QVFhcQUQFCKxIzNAQlJykZKhwVBzorLRYnSBguHx/9oACAEBAAY/AvwKqiAOMaVr3YubUeZjzP6ovaI5GNIp94RVKgocPQbSzZEUZFP6jFVqKjxxqpUUnhFHhaHtDPFpCrQy196tiYqs/wCN2StINDHsr2pylo3nYIK1mpOUDpqlA+uTKjcBBUc2wZTCOXN+MUFwyYZG285QOOjubBvyq17K3Y2EeXZHjFJdoITvXeY1j9CY8u2l1O8XGLTKq70nOIDro7uxO/KuK4Yy3nNFArBdcPJO4YiH2TRaTtzGGppu61pJ9k7RlVcSMZhgesbRxpqTJ7q04Qcx/wC/TK/7YzJ2YP74yabG1Vyq+FDjIfSL2jfyONMz6hcrySPv9sqtG8YxSoVSRQiCpIKpc6Kt3A4iU3oZB77m6GmZcUZQmiaZZY2G8YxSoBSTnBi00pTB3C8RrKae7FXnFPcNEQENpCEjMBFDe2dkBSTUHK2xpI8MWy68htVK0UY1pr5o1pr5o1pr5o1pr5o1pr5oCG30LWdgMb2znEBSTUHK1Hm1ZsRv8oeJxmuSvDq3oOdMBaDUZQoULjFDm2Hf1t/lDxOM1yV4ddG70+sNmVKVioi0O+3v3dTf5Q8TjNcleHVXRR7UWUDL1T5NXDNDaFU8yDdzOMyhOchWflFXPKK+noTH9uP3Kxpf3V/t9DRMOPuNFKLFEgbz/Ma498BGuPfARrj3wEa498BGuPfAQibbmHHFJBFlQH4O0cFhnXSbKa0F0Fqa6OVKpweES6a0Obfz6l9E4ABKa+UtcKwuU7Kl1KQDat0zwZViXS+33RhLe+JYpYD2FtZ1UpSn8xLyM30b2ZT2bvX84TJMyXaVKSCKE1NeEPLm5FcipBoErBv+MPPN9FhbbNC4oOaP0hfSMtJqceSbPZxfU1EBhHRRUoKosJJJRftuhqXal+0TDgtUrmjsE3KGVmDWnPcRCpNUsFtJs1ctX0IickQykNshRS6FVtUVTIyzkqnCOMk1RXODT+Isz8gmVZS3p71Xf9iYZekg1KJrg37WlDs6pgiVNaOVHsw45gCZVbdMLW4Gxd9YklCVUXsKouCo7o7tPvEl2RgvWLdqmzNEpMNdGmQYTc5act3bYTMNSapmXCEg2VBNYmUqkVyNpWit23auiZo040qqfI2vOC/wuhhsynYlJFFNcY6RmH2C2y5asqJF/eiT6TkWg+pmzVHEGog9Lz0uJVI9Wufu2RDri2D2JxFnC7jg6D6w+uaYLaC0UhVReaj07//EACoQAQABAwIFAwQDAQAAAAAAAAERACExQVEgMGFxgaHw8RBAkbFQweHR/9oACAEBAAE/If4LqwpQVYJvYTQvTAr3/Gl/uirKpo6pQU/Yrwjq0iY7z+Cu66HF1vgoqG8SKERdHnTq8wZau67DHKHN/bPeoZh+Q5ii4233mnBKcrImeWcGFK1byx2jmOwEMHvigIALAcuUt/xdPfTmJama+9qAABAacy90qHZpxKRaZqtgp/otefGD1pSVnT/CjJqb4erlo23fK7sjep6VjmaTI478TCRMdeldF1pbRwA8koEhsmpVmEIluPs/HNhmw9eJQrJ47H7fxxYuF9kB/IOax9n98SbpA/LiU8F9lv8AOb3A9TimEe1u4cUEMJXUmX+fQ83e5w78R7mkYSlQL7Rn98FiBLcx6bvSh1CDs37862kP4niPGEAkaYqfwb/2nE6yf/aOuzSf6etWHNDgKvCdfZ1KNtfCc2wM3O+rhPPUEBjevglfBK+CV8Er4JWJPk9aiN/mJRhsZOZmkidTo6cp375u+k2KlPQeZJq9Ksk32+Sd++bvqCOTJo35s1X9KXZdhnu5Dv3zd9DUN9f1RGIaur358j49d4p9UpHZxcD/AGpnSQ3Sf6UAICA+3G+ybvsyLlLhAk34i66664qbEAyRp3/h7MSHtISr5KZL0IboghfVnT6MJ1lSxpRRAZJpWDiKExqDRMBxGk1I74f1RRfUGU0DMQi5ahTXzqlYA7UIAIhGM2FEy5CgMxPg1ebda4JhCWzOKPPQFFijCOtAmR5wAsGCVUbVAqmVwJUElpp5sxmQC2jSatoFBIBiNZnkk2GwhyBO37Urai1vPACcRQ+zoCrki3Ul8Ul28UZjvOaIKIYLmLM2jQ7ru6GE79H5oDTdyF1uXo1EmSFDdKVm5aCj95NkLJOlPxQTuJOlPcF4kM7DDLVu0w1CHBqRlmc0UPZ4JFMO1Bma5JFpDkZi21SM1SK6wCZxeWps23SLkiZtGnftVDQ4ej99/9oADAMBAAIAAwAAABDzzzzjb7jzzzzzzzyIz776zTzzzzyZ77777xTzzzzxz77/AEwU88888s++qBDi888888u++uDDE8888888++vtNm8888888S+sxxxc088888sQ8DDA6+888888s6DDEc88888888tOOc8888888qjHf+ykM1888888888888888//EACkRAQABAgQFAwUBAAAAAAAAAAERACExQVFhMHGBkaEQ0fBAULHB4fH/2gAIAQMBAT8Q+2d6ZY759JqXiaCz5A80uYGI2eFM+CvyLvgqAMEAeiItzXMdMTrrwmzDLqS3mD1b8qHNt/enCFUmNRQoMhI8wvPKZ2q7y0FPkDu0ZkyH7O/47rwQCgiybV8Q9q+Ie1LNLOWROnFx8No8XHw2jwtFsn/a33Y9q33Y9qWGhCQXHpwJNTcYwOYvJt/AikjsNERDd28UqMphqEy5EkRsnKhCxyYMi4IdLp2zL6Uk3Mze1539KROBxHAKN0y5i2EzibSMscISDK0NsedBYwQCYSJFN2MCXlUjhNwZFi+b9B//xAAkEQACAQMDBAMBAAAAAAAAAAABEQAhMDEQQVEgQGGhkcHw4f/aAAgBAgEBPxDpcdp9L6z2GYVhRRYhAGVplJCZzoR3B6zqQi1MhbM/TCikoI5JsHQqInhTwoDkBWOwpk194Ws2vvi0MQxrsQAVWCyCSBRUoeawrLmtNoDUJ8fuYArJjb52+4WYZV/Y+4bREU4/kASYt8bRwpujG3mO2XYf/8QAKRABAAEDAgUFAAMBAQAAAAAAAREAITFBUSAwYXGBkaGxwfBAUNEQ8f/aAAgBAQABPxD+iYkeSB5aeQTq/cwe9JMZ+GJrLZSsRHR+YUmJWBD3JPegjPpx6n8HINt4O3V6U6RghleweZ7V1usjHY08cQsX1y9qV0lhA7mH2pak1Vx2TI9+dJKPeeR2OtNnA2xbB955TMQwyOw1KwaOUc/IfHMhLlyr/wCRq05l0q4Ng2DbmSGVvCmh03fHblB7SfgAlamOC98fly8xPZS9l/XVrpR+RAoAMActYpx21s8pPMIoBoj1P5PajLAgBAHMe6A7G3sJ88WPL822V1+NYKnXeBxN4J2PVViwnGKss42MXW0rtB3pxbmDIdPsJHemtnEvD6GvbIAAICwHMQdhy2RB7pxS3chysA6qgdWnXXUTnW+51b8AmRGISLriIT7oq71JWZOzcdRWvNcD/wBl9cSnwXHJEXpKeHEiZO9tCPrIdnNCwaT+nEK6fUBL8nEfDbroHy80qwl9oD7PE7B0AXsC+PBXiRwUREQJ0gZ3DTmxMT3GFveKRFEhNHhD658qIR7jVggdJuxsDRx3SH/TxDQxS3Bs49VqV7hEiNTqmVcqq85xOwPInhk8cT/BBhuRGyU2hZRu9GE7AOlCivcJ9P8AVJpSbh7gq8Ch6PAydAoD3Ub+TprQuSkrPNUL1sC6YeM+HhKdYqzUIOkieOIIIIIIIUKMAJYOgVJ0pnx8D8/A3yn4Ds9OYgESRyNO3zqmHr46dOzzEiq4VFxs9TZoyJcmR1E0eZEWnlaJslJTZyJY+nc5iRVIIpNgbzo7c0s2hcrcdGjFyQrHT947cpIqECFs7PQavtUFfut13WrzkkhuU/eF1mTr/iKZ0yMijG/Z4kOKIqACq1AoLxQX5efSjIAQAQB/VTsL4j5CQoTMs8FfgPqvwH1X4D6r8B9V+A+qCzqITuUTYl/TkNxyEFnLBHAXnJFBa+j4QBJECYYXtRudQt2vXxmmymkIpEhJO9TGliNaArWc5GlJZRLOMQpn4Uq7DqxViihuRC6RQoAgSwGJdEXZpStDtpIlQNrTT+zgVQtAcnRoaeILljsL80M4motiGejswm9kNmhXMQuttBACMZuFWw0Ed2QlihlmIgpiLxBRyYUOCbxpTMOJqyYADEvJSGqQ+lECoWm4omIpghDAMSLhJYcFzCRt4qjKWSTFaxp6mKYI21LMUmGaQhYegdKO7JJWArWYkLaiahzDDegzpbV1+Xr0kFgBZB3q7p5CSbZUJeHND3vooQgAgYirt0I+Z0lJAaGLlLCauI22QHkq3hZKGVDbB0I3C3KHGI5SNAyAUndIJZFJMsiBBQSlswSKjps4HICNsm1TTe+sgkNxiTT+d//Z" alt="Logo C. Imberton"><div><div class="company">C. IMBERTON, S.A. DE C.V.</div><div class="doc-title">TRASLADO DE SUBINVENTARIO</div><div class="subtitle">Reporte de transacciones de inventario · Página ${page} de ${total}</div><div class="unit-line">Unidad de Inventarios Almacen Farmacia</div></div></div></div><div class="meta"><div><b>FECHA DE IMPRESIÓN:</b><span>${fmtDate(new Date())}</span></div><div><b>CORRELATIVO #:</b><span>${doc.id}</span></div><div><b>ESTADO:</b><span>${doc.state}</span></div></div></div><div class="trans"><strong>TRANSACCIONES:</strong><span class="trans-list">${tx.map(esc).join(' - ')}</span></div><table class="data"><colgroup><col style="width:4%"><col style="width:8%"><col style="width:8%"><col style="width:7%"><col style="width:17%"><col style="width:4%"><col style="width:8%"><col style="width:8%"><col style="width:7%"><col style="width:6%"><col style="width:8%"><col style="width:17%"><col style="width:8%"></colgroup><thead><tr><th>ORG</th><th>TRANSACCION</th><th>FECHA</th><th>ARTICULO</th><th>DESCRIPCION</th><th>U.M</th><th>SUBINVENTARIO</th><th>LOTE</th><th>VENCE</th><th>CANTIDAD</th><th>USUARIO</th><th>COMENTARIO DE REFERENCIA</th><th>TIPO DE TRANSACCION</th></tr></thead><tbody>${rows}</tbody></table><table class="summary"><tr><td>TOTAL DE LÍNEAS:</td><td>${data.length}</td></tr><tr><td>TOTAL SALIDAS (−):</td><td>${out.toLocaleString('en-US')}</td></tr><tr><td>TOTAL ENTRADAS (+):</td><td>${inn.toLocaleString('en-US')}</td></tr><tr><td>NETO DEL TRASLADO:</td><td>${net.toLocaleString('en-US')}</td></tr></table><div class="balanced">${Math.abs(net)<0.000001?'✔ TRASLADO CUADRADO':'✖ REVISAR: NETO ≠ 0'}</div><div class="signatures"><div class="sigline">ELABORADO POR</div><div class="sigline">AUTORIZADO POR</div><div class="sigline">ENTREGADO POR</div><div class="sigline">RECIBIDO POR</div></div><div class="footer">*** FIN DEL REPORTE ***</div></article>`}
+function render(){let rowsPerPage=18,pages=[];for(let i=0;i<current.data.length;i+=rowsPerPage)pages.push(current.data.slice(i,i+rowsPerPage));if(!pages.length)pages=[[]];let html=pages.map((p,i)=>makePage(p,current,i+1,pages.length)).join('');$('preview').innerHTML=html;$('preview').hidden=false;$('printArea').innerHTML=html;$('documentActions').hidden=false}
+async function build(rows){
+  let data=parseRows(rows);
+  if(!data.length)throw Error('No hay filas de transacciones para generar.');
+  if(!activeUser)throw Error('La sesión ha expirado. Inicia sesión nuevamente.');
+  $('build').disabled=true;
+  $('message').textContent='Guardando documento en la base de datos...';
+  try{
+    const transactions=uniqueTransactions(data);
+    const {data:created,error}=await db.rpc('create_transfer_document',{
+      p_payload:{data},
+      p_transactions:transactions,
+      p_row_count:data.length
+    });
+    if(error)throw error;
+    const record=Array.isArray(created)?created[0]:created;
+    if(!record)throw Error('Supabase no devolvió el correlativo asignado.');
+    current={id:formatFolio(record.assigned_folio),documentId:record.document_id,state:'ORIGINAL',printCount:0,data};
+    render();
+    $('message').textContent=`Documento ${current.id} guardado. ${data.length} líneas y ${transactions.length} transacciones únicas.`;
+    $('message').className='status';
+    await loadHistory();
+  }finally{$('build').disabled=false;}
+}
+$('build').onclick=async()=>{try{let rows=parseTSV($('paste').value);await build(rows)}catch(e){$('message').textContent=e.message;$('message').className='status error'}};
+$('clear').onclick=()=>{$('paste').value='';$('preview').hidden=true;$('documentActions').hidden=true;$('message').textContent='';current=null};
+$('file').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let buf=await f.arrayBuffer(),wb=XLSX.read(buf,{type:'array',cellDates:true}),ws=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});$('paste').value=rows.map(r=>r.join('\t')).join('\n');await build(rows)}catch(err){$('message').textContent='No se pudo leer el Excel: '+err.message;$('message').className='status error'}e.target.value=''};
+async function doPrint(){
+  if(!current)return;
+  $('print').disabled=true;
+  try{
+    const {data,error}=await db.rpc('register_transfer_print',{p_document_id:current.documentId});
+    if(error)throw error;
+    const result=Array.isArray(data)?data[0]:data;
+    current.printCount=result.new_print_count;
+    current.state=result.print_status;
+    render();
+    window.print();
+    await loadHistory();
+  }catch(e){$('message').textContent='No se pudo registrar la impresión: '+e.message;$('message').className='status error';}
+  finally{$('print').disabled=false;}
+}
+$('print').onclick=doPrint;
+$('again').onclick=doPrint;
+
+function showApp(user){
+  activeUser=user;
+  $('loginView').hidden=true;
+  $('appView').hidden=false;
+  $('signedUser').textContent=user.email||'Usuario autenticado';
+  loadHistory();
+}
+const HISTORY_PAGE_SIZE=25;
+let historyPage=0,historySearchTerm='';
+async function loadHistory(resetPage=false){
+  if(!activeUser)return;
+  if(resetPage)historyPage=0;
+  $('historyList').textContent='Cargando historial...';
+  $('historyPager').hidden=true;
+  let query=db.from('transfer_documents')
+    .select('id,folio,row_count,created_by_email,created_at,print_count',{count:'exact'})
+    .order('folio',{ascending:false});
+  if(historySearchTerm){
+    if(/^\d+$/.test(historySearchTerm)){
+      query=query.or(`folio.eq.${historySearchTerm},transaction_numbers.cs.{${historySearchTerm}}`);
+    }else{
+      query=query.contains('transaction_numbers',[historySearchTerm]);
+    }
+  }
+  const from=historyPage*HISTORY_PAGE_SIZE;
+  const {data,error,count}=await query.range(from,from+HISTORY_PAGE_SIZE-1);
+  if(error){$('historyList').textContent='No se pudo cargar el historial: '+error.message;return;}
+  const total=count||0;
+  if(!total){$('historyList').textContent=historySearchTerm?'No se encontraron salidas con ese correlativo o número de transacción.':'Todavía no hay documentos guardados.';return;}
+  $('historyList').innerHTML=data.map(d=>`<div class="history-item"><div><b>Traslado ${formatFolio(d.folio)}</b><small>${esc(d.created_by_email||'')} · ${fmtDate(d.created_at,true)} · ${d.row_count} líneas · Impresiones: ${d.print_count}</small></div><button class="btn secondary" type="button" data-reprint="${d.id}">Abrir / reimprimir</button></div>`).join('');
+  $('historyList').querySelectorAll('[data-reprint]').forEach(b=>b.onclick=()=>openSavedDocument(b.dataset.reprint));
+  const first=from+1,last=from+data.length,totalPages=Math.ceil(total/HISTORY_PAGE_SIZE);
+  $('historyPageInfo').textContent=`Mostrando ${first}–${last} de ${total} salidas${historySearchTerm?' · búsqueda aplicada':''} · Página ${historyPage+1} de ${totalPages}`;
+  $('historyPrev').disabled=historyPage===0;
+  $('historyNext').disabled=last>=total;
+  $('historyPager').hidden=false;
+}
+async function openSavedDocument(id){
+  $('message').textContent='Recuperando documento...';
+  const {data,error}=await db.from('transfer_documents').select('id,folio,payload,print_count').eq('id',id).single();
+  if(error){$('message').textContent='No se pudo recuperar: '+error.message;$('message').className='status error';return;}
+  const rows=data.payload?.data;
+  if(!Array.isArray(rows)){ $('message').textContent='El documento guardado no tiene un formato reconocido.';return; }
+  current={id:formatFolio(data.folio),documentId:data.id,state:data.print_count>0?'REIMPRESA':'ORIGINAL',printCount:data.print_count,data:rows};
+  render();
+  $('message').textContent=`Documento ${current.id} recuperado del historial.`;
+  $('message').className='status';
+  $('documentActions').hidden=false;
+  $('historyPanel').hidden=true;
+}
+$('historySearchForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  historySearchTerm=$('historySearchInput').value.trim();
+  await loadHistory(true);
+});
+$('historyClearButton').onclick=async()=>{
+  $('historySearchInput').value='';historySearchTerm='';await loadHistory(true);
+};
+$('historyPrev').onclick=async()=>{if(historyPage>0){historyPage--;await loadHistory();}};
+$('historyNext').onclick=async()=>{historyPage++;await loadHistory();};
+$('historyButton').onclick=async()=>{$('historyPanel').hidden=!$('historyPanel').hidden;if(!$('historyPanel').hidden)await loadHistory(true);};
+$('logoutButton').onclick=async()=>{await db.auth.signOut();activeUser=null;current=null;$('appView').hidden=true;$('loginView').hidden=false;$('loginPassword').value='';};
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const button=$('loginButton');button.disabled=true;
+  $('loginMessage').textContent='Validando acceso...';$('loginMessage').className='status';
+  const {data,error}=await db.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});
+  button.disabled=false;
+  if(error){$('loginMessage').textContent='No se pudo iniciar sesión: '+error.message;$('loginMessage').className='status error';return;}
+  $('loginMessage').textContent='';
+  showApp(data.user);
+});
+db.auth.getSession().then(({data,error})=>{
+  if(error){$('loginMessage').textContent=error.message;$('loginMessage').className='status error';}
+  if(data.session)showApp(data.session.user);
+});
+db.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_OUT'){activeUser=null;$('appView').hidden=true;$('loginView').hidden=false;}
+  else if(session?.user)showApp(session.user);
+});
+</script></body></html>
