@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Preparar existencia</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+:root{--bg:#f3f5f7;--sf:#fff;--tx:#1f2933;--mu:#667381;--ac:#33506e;--bt:#fff;--hd:#e9eef4;--ln:#d6dce3;--ok:#2e7d4f;--bad:#b3402f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14181d;--sf:#1d2329;--tx:#e8ecf0;--mu:#8f9aa6;--ac:#8fb0d3;--bt:#10151a;--hd:#252e38;--ln:#2c343c;--ok:#5fb383;--bad:#e58a7b;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#14181d;--sf:#1d2329;--tx:#e8ecf0;--mu:#8f9aa6;--ac:#8fb0d3;--bt:#10151a;--hd:#252e38;--ln:#2c343c;--ok:#5fb383;--bad:#e58a7b;color-scheme:dark}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,Arial,sans-serif}
+main{max-width:720px;margin:0 auto;padding:12px}h1{margin:8px 0 0;color:var(--ac);font-size:22px}h3{margin:0 0 8px;font-size:16px}.mu{color:var(--mu);font-size:13px}
+textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--ln);border-radius:8px;background:var(--sf);color:var(--tx);font-size:15px}
+button,.btn{display:block;width:100%;box-sizing:border-box;margin:10px 0 0;padding:13px;border:0;border-radius:8px;background:var(--ac);color:var(--bt);font-size:15px;font-weight:600;text-align:center;cursor:pointer}
+button:disabled{opacity:.45}.b2{background:var(--sf);color:var(--tx);border:1px solid var(--ln)}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:12px;margin:14px 0;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.row2,.chips{display:flex;gap:6px;margin-bottom:6px}.row2 button,.chips button{margin:0;padding:9px 4px;font-size:13px;flex:1}.chips .on{background:var(--ac);color:var(--bt);border-color:var(--ac)}
+.sc{max-height:300px;overflow:auto;border-top:1px solid var(--ln)}
+.ck{display:flex;align-items:center;gap:10px;margin:0;padding:9px 2px;border-bottom:1px solid var(--ln);font-size:15px}.ck span{margin-left:auto;color:var(--mu);font-size:13px}.ck input{width:22px;height:22px;flex:none}
+.ov{overflow-x:auto;margin-top:8px}table{border-collapse:collapse;font-size:12px;width:100%}td,th{border:1px solid var(--ln);padding:4px 6px;white-space:nowrap;text-align:left}th{background:var(--hd)}
+[hidden]{display:none!important}footer{text-align:center;color:var(--mu);font-size:12px;padding:16px 0}
+</style></head><body><main>
+<h1>Preparar existencia</h1><div class="mu">C. Imberton · Almacén Farmacia</div>
+<label class="btn">1. Cargar existencia de Oracle (Excel)<input id="file" type="file" accept=".xlsx,.xls,.csv" hidden></label>
+<p id="msg" class="mu"></p>
+<div id="app" hidden>
+<div class="card"><h3>2. Subinventarios</h3><div class="row2"><button class="b2" id="sd">Los 8 de conteo</button><button class="b2" id="sa">Todos</button><button class="b2" id="sn">Ninguno</button></div><div id="subs" class="sc"></div></div>
+<div class="card"><h3>3. ¿Qué descargar?</h3><div class="chips"><button class="b2 on" data-mo="all">Todo</button><button class="b2" data-mo="marca">Por marca</button><button class="b2" data-mo="cod">Por código(s)</button></div>
+<div id="pm" hidden><div class="row2"><button class="b2" id="ma">Todas</button><button class="b2" id="mn">Ninguna</button></div><div id="ml" class="sc"></div></div>
+<div id="pc" hidden><textarea id="cods" rows="4" placeholder="Pega uno o varios códigos, separados por coma, espacio o salto de línea"></textarea><p id="cm" class="mu"></p></div></div>
+<div class="card"><h3>Resumen</h3><div id="sum"></div><div id="prev" class="ov"></div></div>
+<button id="dl">Descargar existencia</button></div>
+<footer>Powered by Ever Molina</footer></main>
+<script>
+const $=s=>document.querySelector(s),E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nz=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[_\s]+/g,' ').trim();
+const DEF=['CD_SAN MAR','CONSIGNA','CORTO_VENC','CUARENTENA','DEMAND_SAM','DISPONIBLE','FALTAN_BO','STAGING'],isD=s=>DEF.includes(String(s).trim().toUpperCase());
+let D=[],SU={},MS={},MO='all';
+const msg=t=>$('#msg').textContent=t,pad=c=>/^\d+$/.test(c)&&c.length<7?c.padStart(7,'0'):c;
+const num=v=>{const n=typeof v==='number'?v:parseFloat(String(v).replace(/,/g,''));return isNaN(n)?null:n};
+const dt=v=>{if(v===''||v==null)return null;if(typeof v==='number')return new Date(Date.UTC(1899,11,30)+Math.round(v)*864e5);const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));const d=new Date(v);return isNaN(d)?null:new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()))};
+const cods=()=>new Set($('#cods').value.split(/[\s,;]+/).filter(Boolean).map(pad));
+function fl(){let r=D.filter(x=>SU[x.s]);if(MO==='marca')r=r.filter(x=>MS[x.m]);if(MO==='cod'){const s=cods();r=r.filter(x=>s.has(x.c))}
+return r.sort((a,b)=>a.c<b.c?-1:a.c>b.c?1:a.s<b.s?-1:a.s>b.s?1:((+a.v||0)-(+b.v||0))||(a.l<b.l?-1:a.l>b.l?1:0))}
+function subsUI(){const n={};D.forEach(x=>n[x.s]=(n[x.s]||0)+1);const ks=Object.keys(n).sort((a,b)=>(isD(b)-isD(a))||(a<b?-1:1));
+$('#subs').innerHTML=ks.map((k,i)=>(i&&isD(ks[i-1])&&!isD(k)?'<div class="mu" style="padding:10px 2px 2px">Otros subinventarios (se quitan si no los marcas)</div>':'')+`<label class="ck"><input type="checkbox" data-s="${E(k)}" ${SU[k]?'checked':''}>${E(k)}<span>${n[k]} líneas</span></label>`).join('')}
+function marcasUI(){const n={};D.forEach(x=>{if(SU[x.s])n[x.m]=(n[x.m]||0)+1});$('#ml').innerHTML=Object.keys(n).sort().map(m=>`<label class="ck"><input type="checkbox" data-m="${m}" ${MS[m]?'checked':''}><b>${m}</b><span>${n[m]} líneas</span></label>`).join('')||'<div class="mu" style="padding:8px">Sin líneas</div>'}
+function sum(){const r=fl(),tot=D.length,sel=D.filter(x=>SU[x.s]).length;
+if(MO==='cod'){const set=cods(),inF=new Set(D.map(x=>x.c)),inS=new Set(D.filter(x=>SU[x.s]).map(x=>x.c)),a=[...set].filter(c=>!inF.has(c)),b=[...set].filter(c=>inF.has(c)&&!inS.has(c));
+$('#cm').textContent=set.size?`${[...set].filter(c=>inS.has(c)).length} de ${set.size} códigos con existencia`+(a.length?` · no están en el archivo: ${a.join(', ')}`:'')+(b.length?` · solo en subinventarios no marcados: ${b.join(', ')}`:''):'Escribe o pega los códigos.'}
+$('#sum').innerHTML=`<b>${r.length}</b> líneas · <b>${new Set(r.map(x=>x.c)).size}</b> artículos · <b>${new Set(r.map(x=>x.m)).size}</b> marcas<div class="mu">Se quitan ${tot-sel} líneas de subinventarios no marcados (de ${tot} en el archivo).</div>`;
+$('#prev').innerHTML=r.length?'<table><tr>'+['Marca','Artículo','Descripción','Subinv.','Lote','Vence','Cant.','Costo.Uni'].map(h=>`<th>${h}</th>`).join('')+'</tr>'+r.slice(0,6).map(x=>`<tr><td>${x.m}</td><td>${x.c}</td><td>${E(x.d)}</td><td>${E(x.s)}</td><td>${E(x.l)}</td><td>${x.v?x.v.toISOString().slice(0,10):''}</td><td>${x.q}</td><td>${x.u==null?'':x.u.toFixed(2)}</td></tr>`).join('')+'</table>':'';
+$('#dl').disabled=!r.length}
+$('#file').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;msg('Leyendo archivo…');
+const wb=XLSX.read(await f.arrayBuffer(),{type:'array'}),A=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''});e.target.value='';
+const hi=A.findIndex(r=>r.some(c=>/^(item name|articulo)$/.test(nz(c))));if(hi<0)return msg('No encontré la fila de encabezados (Item_Name o Artículo).');
+const H=A[hi].map(nz),ix=re=>H.findIndex(h=>re.test(h)),C={c:ix(/^(item name|articulo)$/),d:ix(/item description|descripcion/),o:ix(/organization|organizacion/),s:ix(/subinventor/),l:ix(/^(lot number|lote)$/),v:ix(/expiration|caduc/),q:ix(/available|^cantidad/),u:ix(/unit cost|costo.?uni/),t:ix(/monto|costo.?total/)};
+const L={c:'Item_Name',d:'Item_Description',o:'Inventory_Organization_Code',s:'Subinventory_Name',l:'Lot_Number',v:'Expiration_Date',q:'Available_Quantity'},miss=Object.keys(L).filter(k=>C[k]<0).map(k=>L[k]);
+if(miss.length)return msg('Faltan columnas: '+miss.join(', '));
+D=[];let bad=0;A.slice(hi+1).forEach(r=>{let c=String(r[C.c]).trim();if(/^\d+$/.test(c))c=pad(c);if(!/^\d{5,}$/.test(c)){if(r.some(x=>x!==''))bad++;return}
+D.push({m:c.slice(0,3),c,d:String(r[C.d]).trim(),o:r[C.o],s:String(r[C.s]).trim(),l:String(r[C.l]).trim(),v:dt(r[C.v]),q:num(r[C.q])??0,u:C.u>=0?num(r[C.u]):null,t:C.t>=0?num(r[C.t]):null})});
+SU={};MS={};D.forEach(x=>{SU[x.s]=isD(x.s);MS[x.m]=true});subsUI();marcasUI();sum();$('#app').hidden=false;
+msg(`${D.length} líneas leídas de ${f.name}`+(bad?` · ${bad} filas ignoradas (sin código válido)`:''))}catch(x){msg('No pude leer el archivo.')}};
+$('#subs').onchange=e=>{const s=e.target.dataset.s;if(s!=null){SU[s]=e.target.checked;marcasUI();sum()}};
+const setS=f=>{Object.keys(SU).forEach(k=>SU[k]=f(k));subsUI();marcasUI();sum()};
+$('#sd').onclick=()=>setS(isD);$('#sa').onclick=()=>setS(()=>true);$('#sn').onclick=()=>setS(()=>false);
+document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>{MO=b.dataset.mo;document.querySelectorAll('.chips button').forEach(x=>x.classList.toggle('on',x===b));$('#pm').hidden=MO!=='marca';$('#pc').hidden=MO!=='cod';sum()});
+$('#ml').onchange=e=>{const m=e.target.dataset.m;if(m){MS[m]=e.target.checked;sum()}};
+$('#ma').onclick=()=>{Object.keys(MS).forEach(k=>MS[k]=true);marcasUI();sum()};$('#mn').onclick=()=>{Object.keys(MS).forEach(k=>MS[k]=false);marcasUI();sum()};
+$('#cods').oninput=sum;
+async function save(name,data){let d=null;try{d=window.claude&&await claude.use('downloads')}catch(x){}
+if(d){try{await d.save({filename:name,data});return}catch(x){if(x&&x.code==='declined')return}}
+const a=document.createElement('a');a.href=URL.createObjectURL(data instanceof Blob?data:new Blob([data],{type:'application/octet-stream'}));a.download=name;a.click()}
+$('#dl').onclick=async()=>{try{const r=fl();if(!r.length)return;const W=new ExcelJS.Workbook(),ws=W.addWorksheet('Existencia',{views:[{state:'frozen',ySplit:1}]});
+ws.columns=['Marca','Artículo','Descripción de artículo','Organización de inventario - Código','Subinventario','Lote','Fecha de caducidad','Cantidad','Costo.Uni','Costo.total'].map((h,i)=>({header:h,width:[8,12,46,18,16,16,16,10,12,12][i]}));
+r.forEach(x=>{const w=ws.addRow([x.m,x.c,x.d,x.o,x.s,x.l,x.v,x.q,x.u,x.t]);w.getCell(7).numFmt='dd/mm/yyyy';w.getCell(9).numFmt='#,##0.00';w.getCell(10).numFmt='#,##0.00'});
+const h=ws.getRow(1);h.height=32;h.eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF33506E'}};c.alignment={vertical:'middle',wrapText:true}});
+ws.autoFilter={from:{row:1,column:1},to:{row:1,column:10}};
+const ms=[...new Set(r.map(x=>x.m))],cs=[...new Set(r.map(x=>x.c))],tag=MO==='cod'?(cs.length===1?cs[0]:cs.length+'_CODIGOS'):MO==='marca'?(ms.length<=3?ms.join('-'):ms.length+'_MARCAS'):'COMPLETA';
+await save(`EXISTENCIA_${tag}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`,await W.xlsx.writeBuffer());msg('Existencia generada: '+r.length+' líneas.')}catch(x){msg('Error al exportar: '+x.message)}};
+</script></body></html>
